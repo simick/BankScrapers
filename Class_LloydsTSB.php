@@ -45,14 +45,13 @@ class UK_LloydsTSB {
 		CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'
 	);
 
-	public function __construct($customerID, $customerPass, $memWord, $accountName) {
-		parent::__construct();
+	public function __construct($customerID, $customerPass, $memWord, $accNumber) {
 
 		$this->loginData = array(
 			'customerID'   => $customerID,
 			'customerPass' => $customerPass,
 			'memWord'      => $memWord,
-			'accountName'  => $accountName
+			'accNumber'  => $accNumber
 		);
 
 		if(!file_exists($this::$CURL_OPTS[CURLOPT_COOKIEFILE])) {
@@ -136,6 +135,69 @@ class UK_LloydsTSB {
 	}
 
 	/**
+	 * selectAccount
+	 *
+	 * Return the 'View Product Details' page, containing
+	 * recent transactions, balance, available balance etc.
+	 *
+	 * @return (string)           Product details HTML
+	 */
+	private function selectAccount() {
+		$html = $this->easycurl($this::$URLS['accounts']);
+
+		$DOM = new DOMDocument();
+		$DOM->loadHTML($html);
+		$xpath = new DOMXPath($DOM);
+		$x_query =
+			'//div[contains(@class,"accountDetails")'
+			.' and contains(.,"'.$this->loginData['accNumber'].'")]//a';
+		$account_url = $xpath->query($x_query)->item(0)->getAttribute('href');
+
+		return $this->easycurl($this::$URL_PREFIX.$account_url);
+	}
+
+	/**
+	 * getBalance
+	 *
+	 * Scrapes the current balance, available balance
+	 * and overdraft limit of the selected account.
+	 *
+	 * @return  (string array)  'balance', 'available', 'overdraft'
+	 */
+	public function getBalance() {
+		$html = $this->selectAccount();
+
+		$DOM = new DOMDocument();
+		$DOM->loadHTML($html);
+		$xpath = new DOMXPath($DOM);
+		$x_query = '//div[@class="accountBalance"]';
+
+		$balance_div = $xpath->query($x_query)->item(0);
+
+		$x_query_balance = 'p[@class="balance"]';
+		$balances['balance'] =
+			$xpath->query($x_query_balance, $balance_div)
+			->item(0)
+			->nodeValue;
+
+		$x_query_available = 'p[contains(.,"available")]';
+		$available =
+			$xpath->query($x_query_available, $balance_div)
+			->item(0)
+			->nodeValue;
+		$balances['available'] = array_pop(explode(" ", $available));
+
+		$x_query_overdraft = 'p[contains(.,"Overdraft")]';
+		$overdraft =
+			$xpath->query($x_query_overdraft, $balance_div)
+			->item(0)
+			->nodeValue;
+		$balances['overdraft'] = array_pop(explode(" ", $overdraft));
+
+		return $balances;
+	}
+
+	/**
 	 * getTransactions
 	 *
 	 * Scrape the transaction list from a logged in session.
@@ -144,18 +206,7 @@ class UK_LloydsTSB {
 	 *          $transaction['date','description','type','in','out','balance']
 	 */
 	public function getTransactions() {
-		$html = $this->easycurl($this::$URLS['accounts']);
-
-		$DOM = new DOMDocument();
-		$DOM->loadHTML($html);
-		$xpath = new DOMXPath($DOM);
-		$x_query =
-			'//div[contains(@class,"accountDetails")]'
-			.'//a[contains(.,"'.$this->loginData['accountName'].'")]';
-
-		$account_url = $xpath->query($x_query)->item(0)->getAttribute('href');
-
-		$html = $this->easycurl($this::$URL_PREFIX.$account_url);
+		$html = $this->selectAccount();
 
 		$DOM = new DOMDocument();
 		$DOM->loadHTML($html);

@@ -45,7 +45,6 @@ class UK_Natwest {
 		EZX_HIDDEN = 2;
 
 	public function __construct($customerID, $customerPass, $customerPIN, $accountName) {
-		parent::__construct();
 
 		$this->loginData = array(
 			'customerID'   => $customerID,
