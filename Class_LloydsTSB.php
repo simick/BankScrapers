@@ -164,7 +164,7 @@ class UK_LloydsTSB {
 	 *
 	 * @return  (string array)  'balance', 'available', 'overdraft'
 	 */
-	public function getBalance() {
+	public function getBalance($which = NULL) {
 		$html = $this->selectAccount();
 
 		$DOM = new DOMDocument();
@@ -175,7 +175,7 @@ class UK_LloydsTSB {
 		$balance_div = $xpath->query($x_query)->item(0);
 
 		$x_query_balance = 'p[@class="balance"]';
-		$balances['balance'] =
+		$balances['b'] =
 			$xpath->query($x_query_balance, $balance_div)
 			->item(0)
 			->nodeValue;
@@ -185,16 +185,20 @@ class UK_LloydsTSB {
 			$xpath->query($x_query_available, $balance_div)
 			->item(0)
 			->nodeValue;
-		$balances['available'] = array_pop(explode(" ", $available));
+		$balances['a'] = array_pop(explode(" ", $available));
 
 		$x_query_overdraft = 'p[contains(.,"Overdraft")]';
 		$overdraft =
 			$xpath->query($x_query_overdraft, $balance_div)
 			->item(0)
 			->nodeValue;
-		$balances['overdraft'] = array_pop(explode(" ", $overdraft));
+		$balances['o'] = array_pop(explode(" ", $overdraft));
 
-		return $balances;
+		if ( !is_null($which) ) {
+			return $balances[$which];
+		} else {
+			return $balances;
+		}
 	}
 
 	/**
@@ -205,7 +209,7 @@ class UK_LloydsTSB {
 	 * @return  array of
 	 *          $transaction['date','description','type','in','out','balance']
 	 */
-	public function getTransactions() {
+	public function getTransactions($n = NULL) {
 		$html = $this->selectAccount();
 
 		$DOM = new DOMDocument();
@@ -226,7 +230,11 @@ class UK_LloydsTSB {
 			);
 			$transactions[] = $txn;
 		}
-		return $transactions;
+		if ( is_null($n) ) {
+			return $transactions;
+		} else {
+			return array_slice($transactions, 0, $n);
+		}
 	}
 
 	/**
