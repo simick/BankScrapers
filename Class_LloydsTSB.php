@@ -244,13 +244,17 @@ class UK_LloydsTSB {
 
 		foreach ( $txnRows as $txnRow ) {
 			$txn = array(
-				'date'        => $txnRow->childNodes->item(0)->nodeValue,
-				'description' => $txnRow->childNodes->item(1)->nodeValue,
-				'type'        => $txnRow->childNodes->item(2)->nodeValue,
-				'in'          => $txnRow->childNodes->item(3)->nodeValue,
-				'out'         => $txnRow->childNodes->item(4)->nodeValue,
-				'balance'     => $txnRow->childNodes->item(5)->nodeValue
+				'date'            => strtotime($txnRow->childNodes->item(0)->nodeValue),
+				'commentary'      => $txnRow->childNodes->item(1)->nodeValue,
+				'transType'       => $txnRow->childNodes->item(2)->nodeValue,
+				'amount'          => floatval($txnRow->childNodes->item(3)->nodeValue)
+				- floatval($txnRow->childNodes->item(4)->nodeValue),
+				'balance'         => $txnRow->childNodes->item(5)->nodeValue
 			);
+
+			$commentary = $this->parseCommentary($txnRow->childNodes->item(1));
+			$txn = array_merge($txn, $commentary);
+
 			$transactions[] = $txn;
 		}
 		if ( is_null($n) ) {
@@ -258,6 +262,43 @@ class UK_LloydsTSB {
 		} else {
 			return array_slice($transactions, 0, $n);
 		}
+	}
+
+	private function parseCommentary($cNode) {
+		// The other party seems to always be the first entry, handily in its own span.
+		// However, it sometimes has the date directly afterwards, separated by multiple
+		// spaces.
+		$c['transOtherParty'] = explode("  ",$cNode->childNodes->item(0)->nodeValue)[0];
+
+		// Everything from now is pick and mix, depending on transaction type...
+
+		// We'll often have a date and/or time, of the form ddMONyy hh:mm
+		$months = array('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC');
+		$date_regex = '/\d{2}('.implode('|', array_map('preg_quote', $months)).')\d{2}/i';
+		preg_match($date_regex, $cNode->nodeValue, $matches);
+		if ( $matches ) {
+			$c['date'] = $matches[0];
+		}
+		$time_regex = '/\d{2}:\d{2}/i';
+		preg_match($time_regex, $cNode->nodeValue, $matches);
+		if ( $matches ) {
+			$c['time'] = $matches[0];
+		}
+
+		// If there's an FPID, it'll be an 18 character string. This is pretty
+		//  much all we know about it.
+		$fpid_regex = '/\w{18}/i';
+		preg_match($fpid_regex, $cNode->nodeValue, $matches);
+		if ( $matches ) {
+			$c['fpid'] = $matches[0];
+		}
+
+		// We'll delete all of the above and hope that what's left is a reference number.
+		// In practice, this probably won't be the case, but we're not going to be able
+		// to differentiate between arbitrary references and, say, account numbers and
+		// sort codes. I.e., USE THIS WITH CAUTION.
+		$c['reference'] = trim(str_replace($c, '', $cNode->nodeValue));
+		return $c;
 	}
 
 	/**
