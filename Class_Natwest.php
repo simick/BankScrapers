@@ -20,7 +20,11 @@ class UK_Natwest {
 		'loginInit' =>
 		'https://www.nwolb.com/default.aspx',
 		'statements' =>
-		'https://www.nwolb.com/StatementsFixedperiod.aspx?id='
+		'https://www.nwolb.com/StatementsFixedperiod.aspx?id=',
+		'summary' =>
+		'https://www.nwolb.com/AccountSummary2.aspx',
+		'logout' =>
+		'https://www.nwolb.com/ServiceManagement/RedirectOutOfService.aspx?targettag=destination_ExitService&secstatus=0'
 	);
 
 	private static $CURL_OPTS = array(
@@ -44,13 +48,13 @@ class UK_Natwest {
 		EZX_FORM   = 1,
 		EZX_HIDDEN = 2;
 
-	public function __construct($customerID, $customerPass, $customerPIN, $accountName) {
+	public function __construct($customerID, $customerPass, $customerPIN, $accountNum) {
 
 		$this->loginData = array(
 			'customerID'   => $customerID,
 			'customerPass' => $customerPass,
 			'customerPIN'  => $customerPIN,
-			'accountName'  => $accountName
+			'accountNum'  => $accountNum
 		);
 
 		if(!file_exists(self::$CURL_OPTS[CURLOPT_COOKIEFILE])) {
@@ -63,6 +67,14 @@ class UK_Natwest {
 		curl_setopt_array($this->curl, self::$CURL_OPTS);
 
 		libxml_use_internal_errors(TRUE);
+	}
+
+	public function setLoggedOut() {
+		$this->loginSuccess = false;
+	}
+
+	public function setLoggedIn() {
+		$this->loginSuccess = true;
 	}
 
 	/**
@@ -222,7 +234,7 @@ class UK_Natwest {
 		$html_step1 = $this->login_step1();
 		$html = $this->login_step2($html_step1);
 
-		$this->loginSuccess = TRUE;
+		$this->setLoggedIn();
 	}
 
 	/**
@@ -233,7 +245,7 @@ class UK_Natwest {
 	 * @return  array of
 	 *          $transaction['date','description','type','in','out','balance']
 	 */
-	public function getTransactions() {
+	public function getTransactions($n = NULL) {
 		// We still need to parse and send the statements form.
 		$html = $this->easycurl(self::$URLS['statements']);
 
@@ -254,7 +266,7 @@ class UK_Natwest {
 		}
 
 		// Select the account by the account number.
-		$x_query = '//option[contains(.,"'.$this->loginData['accountName'].'")]';
+		$x_query = '//option[contains(.,"'.$this->loginData['accountNum'].'")]';
 		$acOption = $this->easyxpath($html, self::EZX_OTHER, $x_query)
 			->item(0)
 			->getAttribute('value');
@@ -275,16 +287,21 @@ class UK_Natwest {
 		$transactions = [];
 		foreach ( $txnRows as $txnRow ) {
 			$txn = array(
-				'date'        => $txnRow->childNodes->item(0)->nodeValue,
-				'type'        => $txnRow->childNodes->item(1)->nodeValue,
-				'description' => $txnRow->childNodes->item(2)->nodeValue,
-				'in'          => $txnRow->childNodes->item(3)->nodeValue,
-				'out'         => $txnRow->childNodes->item(4)->nodeValue,
+				'date'        => strtotime($txnRow->childNodes->item(0)->nodeValue),
+				'transType'   => $txnRow->childNodes->item(1)->nodeValue,
+				'commentary'  => $txnRow->childNodes->item(2)->nodeValue,
+				'amount'      => floatval($txnRow->childNodes->item(3)->nodeValue)
+				- floatval($txnRow->childNodes->item(4)->nodeValue),
 				'balance'     => $txnRow->childNodes->item(5)->nodeValue
 			);
 			$transactions[] = $txn;
 		}
-		return $transactions;
+		$transactions = array_reverse($transactions);
+		if ( is_null($n) ) {
+			return $transactions;
+		} else {
+			return array_slice($transactions, 0, $n);
+		}
 	}
 
 	/**
@@ -296,7 +313,7 @@ class UK_Natwest {
 
 		$this->easycurl(self::$URLS['logout']);
 
-		$this->loginSuccess = FALSE;
+		$this->setLoggedOut();
 	}
 }
 

@@ -45,6 +45,9 @@ class UK_LloydsTSB {
 		CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'
 	);
 
+	const
+	EZX_OTHER  = 0;
+
 	public function __construct($customerID, $customerPass, $memWord, $accNumber) {
 
 		$this->loginData = array(
@@ -66,6 +69,14 @@ class UK_LloydsTSB {
 		libxml_use_internal_errors(TRUE);
 	}
 
+	public function setLoggedOut() {
+		$this->loginSuccess = false;
+	}
+
+	public function setLoggedIn() {
+		$this->loginSuccess = true;
+	}
+
 	/**
 	 * curl
 	 *
@@ -84,6 +95,30 @@ class UK_LloydsTSB {
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
 		}
 		return curl_exec($this->curl);
+	}
+
+	/**
+	 * Helper to run common xpath queries.
+	 *
+	 * @param  (string)  (html)    The HTML string to query
+	 *         (int)     (action)  Common actions to perform:
+	 *                             EZX_FORM   : Return the form
+	 *                             EZX_HIDDEN : Return hidden elements
+	 *                             EZX_OTHER  : Return a custom query
+	 *         (string)  (x_query) Optional query to run, if EZX_OTHER
+	 *                             is selected
+	 *
+	 * @return (DOMNodeList)       The elements selected by the query.
+	 */
+	private function easyxpath($html, $action, $x_query = NULL) {
+		$DOM = new DOMDocument();
+		$DOM->loadHTML($html);
+		$xpath = new DOMXPath($DOM);
+		switch ( $action ) {
+		case self::EZX_OTHER:
+			return $xpath->query($x_query);
+			break;
+		}
 	}
 
 	/**
@@ -111,9 +146,8 @@ class UK_LloydsTSB {
 				];
 		}
 
-		$xpath = new DOMXPath($DOM);
-		$submitToken = $xpath
-			->query('//input[@name="submitToken"]')
+		$x_query = '//input[@name="submitToken"]';
+		$submitToken = $this->easyxpath($html, self::EZX_OTHER, $x_query)
 			->item(0)
 			->getAttribute('value');
 
@@ -131,7 +165,7 @@ class UK_LloydsTSB {
 
 		$this->easycurl($this::$URLS['loginMemInfo'], TRUE, http_build_query($memData));
 
-		$this->loginSuccess = TRUE;
+		$this->setLoggedIn();
 	}
 
 	/**
@@ -145,13 +179,12 @@ class UK_LloydsTSB {
 	private function selectAccount() {
 		$html = $this->easycurl($this::$URLS['accounts']);
 
-		$DOM = new DOMDocument();
-		$DOM->loadHTML($html);
-		$xpath = new DOMXPath($DOM);
 		$x_query =
 			'//div[contains(@class,"accountDetails")'
 			.' and contains(.,"'.$this->loginData['accNumber'].'")]//a';
-		$account_url = $xpath->query($x_query)->item(0)->getAttribute('href');
+		$account_url = $this->easyxpath($html, self::EZX_OTHER, $x_query)
+			->item(0)
+			->getAttribute('href');
 
 		return $this->easycurl($this::$URL_PREFIX.$account_url);
 	}
@@ -167,29 +200,22 @@ class UK_LloydsTSB {
 	public function getBalance($which = NULL) {
 		$html = $this->selectAccount();
 
-		$DOM = new DOMDocument();
-		$DOM->loadHTML($html);
-		$xpath = new DOMXPath($DOM);
-		$x_query = '//div[@class="accountBalance"]';
-
-		$balance_div = $xpath->query($x_query)->item(0);
-
-		$x_query_balance = 'p[@class="balance"]';
+		$x_query_balance = '//div[@class="accountBalance"]//p[@class="balance"]';
 		$balances['b'] =
-			$xpath->query($x_query_balance, $balance_div)
+			$this->easyxpath($html, self::EZX_OTHER, $x_query_balance)
 			->item(0)
 			->nodeValue;
 
-		$x_query_available = 'p[contains(.,"available")]';
+		$x_query_available = '//div[@class="accountBalance"]//p[contains(.,"available")]';
 		$available =
-			$xpath->query($x_query_available, $balance_div)
+			$this->easyxpath($html, self::EZX_OTHER, $x_query_available)
 			->item(0)
 			->nodeValue;
 		$balances['a'] = array_pop(explode(" ", $available));
 
-		$x_query_overdraft = 'p[contains(.,"Overdraft")]';
+		$x_query_overdraft = '//div[@class="accountBalance"]//p[contains(.,"Overdraft")]';
 		$overdraft =
-			$xpath->query($x_query_overdraft, $balance_div)
+			$this->easyxpath($html, self::EZX_OTHER, $x_query_overdraft)
 			->item(0)
 			->nodeValue;
 		$balances['o'] = array_pop(explode(" ", $overdraft));
@@ -212,12 +238,9 @@ class UK_LloydsTSB {
 	public function getTransactions($n = NULL) {
 		$html = $this->selectAccount();
 
-		$DOM = new DOMDocument();
-		$DOM->loadHTML($html);
-		$xpath = new DOMXPath($DOM);
 		$x_query = '//table[contains(@class,"statement")]/tbody/tr';
 
-		$txnRows = $xpath->query($x_query);
+		$txnRows = $this->easyxpath($html, self::EZX_OTHER, $x_query);
 
 		foreach ( $txnRows as $txnRow ) {
 			$txn = array(
@@ -246,7 +269,7 @@ class UK_LloydsTSB {
 
 		$this->easycurl($this::$URLS['logout']);
 
-		$this->loginSuccess = FALSE;
+		$this->setLoggedOut();
 	}
 }
 
