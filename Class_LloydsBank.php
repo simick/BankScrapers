@@ -18,15 +18,15 @@ class UK_LloydsTSB {
 	private static $URL_PREFIX = 'https://secure2.lloydstsb.co.uk';
 	private static $URLS = array(
 		'loginInit' =>
-		'https://online.lloydstsb.co.uk/personal/logon/login.jsp',
+		'https://online.lloydsbank.co.uk/personal/logon/login.jsp',
 		'loginUserPass' =>
-		'https://online.lloydstsb.co.uk/personal/primarylogin',
+		'https://online.lloydsbank.co.uk/personal/primarylogin',
 		'loginMemInfo' =>
-		'https://secure2.lloydstsb.co.uk/personal/a/logon/entermemorableinformation.jsp',
+		'https://secure.lloydsbank.co.uk/personal/a/logon/entermemorableinformation.jsp',
 		'accounts' =>
-		'https://secure2.lloydstsb.co.uk/personal/a/account_overview_personal',
+		'https://secure.lloydsbank.co.uk/personal/a/account_overview_personal',
 		'logout' =>
-		'https://secure2.lloydstsb.co.uk/personal/a/viewaccount/accountoverviewpersonalbase.jsp?lnkcmd=lnkCustomerLogoff&al='
+		'https://secure.lloydsbank.co.uk/personal/a/viewaccount/accountoverviewpersonalbase.jsp?lnkcmd=lnkCustomerLogoff&al='
 	);
 
 	private static $CURL_OPTS = array(
@@ -140,9 +140,10 @@ class UK_LloydsTSB {
 		$DOM->loadHTML($html);
 		$memInfoLabels = $DOM->getElementsByTagName('label');
 		for ( $i = 0; $i < 3; $i++ ) {
+			$nvExploded = explode(' ', $memInfoLabels->item($i)->nodeValue);
 			$memInfo[$i] =
 				$this->loginData['memWord'][
-					explode(' ', $memInfoLabels->item($i)->nodeValue)[1] - 1
+					$nvExploded[1] - 1
 				];
 		}
 
@@ -268,7 +269,8 @@ class UK_LloydsTSB {
 		// The other party seems to always be the first entry, handily in its own span.
 		// However, it sometimes has the date directly afterwards, separated by multiple
 		// spaces.
-		$c['transOtherParty'] = explode("  ",$cNode->childNodes->item(0)->nodeValue)[0];
+		$nvExploded = explode("  ",$cNode->childNodes->item(0)->nodeValue);
+		$c['transOtherParty'] = $nvExploded[0];
 
 		// Everything from now is pick and mix, depending on transaction type...
 
