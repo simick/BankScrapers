@@ -1,6 +1,6 @@
 <?php
 
-require_once('Class_LloydsTSB.php');
+require_once('Class_LloydsBank.php');
 
 $usage = "Syntax: {$argv[0]} action [arguments]\n\n"
 		."Actions:\n"
@@ -19,7 +19,7 @@ $customerPass = '';
 $memWord = '';
 $accountNum = '';
 
-$lloyds = new UK_LloydsTSB($customerID,$customerPass,$memWord,$accountNum);
+$lloyds = new UK_LloydsBank($customerID,$customerPass,$memWord,$accountNum);
 
 switch ( strtolower($argv[1]) ) {
 case 'txn':
