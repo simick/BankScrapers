@@ -212,6 +212,10 @@ class UK_LloydsBank {
 	 * @return  (string array)  'balance', 'available', 'overdraft'
 	 */
 	public function getBalance($which = NULL) {
+		if ( ! $this->loginSuccess ) {
+			$this->login();
+		}
+
 		$html = $this->selectAccount();
 
 		$x_query_balance = '//div[@class="accountBalance"]//p[@class="balance"]';
