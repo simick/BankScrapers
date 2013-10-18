@@ -9,11 +9,12 @@
  * @author Simon Gaulter <simongaulter@fmail.co.uk> 0x881E6FB9
  *
  */
-class UK_LloydsTSB {
+class UK_LloydsBank {
 
 	public $loginSuccess;
 	private $loginData;
 	private $curl;
+	private $availableBalance;
 
 	private static $URL_PREFIX = 'https://secure2.lloydstsb.co.uk';
 	private static $URLS = array(
@@ -166,7 +167,19 @@ class UK_LloydsTSB {
 
 		$this->easycurl($this::$URLS['loginMemInfo'], TRUE, http_build_query($memData));
 
-		$this->setLoggedIn();
+		# See if we can get the account number to test if the login succeeded.
+
+		$html = $this->easycurl($this::$URLS['accounts']);
+
+		$x_query =
+			'//div[contains(@class,"accountDetails")'
+			.' and contains(.,"'.$this->loginData['accNumber'].'")]//a';
+		$account_url = $this->easyxpath($html, self::EZX_OTHER, $x_query);
+		if ( $account_url->length == 0 ) {
+			$this->setLoggedOut();
+		} else {
+			$this->setLoggedIn();
+		}
 	}
 
 	/**
@@ -237,6 +250,21 @@ class UK_LloydsTSB {
 	 *          $transaction['date','description','type','in','out','balance']
 	 */
 	public function getTransactions($n = NULL) {
+		if ( ! $this->loginSuccess ) {
+			$this->login();
+		}
+
+		# Lloyds doesn't update the transaction list without logging out and back in.
+		# It does update the available balance though, so we'll check that and logout if necessary.
+		if ( ! isset($this->availableBalance) ) {
+			$this->availableBalance = $this->getBalance('a');
+		} else {
+			if ( $this->availableBalance != $this->getBalance('a') ) {
+				$this->logout();
+				$this->login();
+			}
+		}
+
 		$html = $this->selectAccount();
 
 		$x_query = '//table[contains(@class,"statement")]/tbody/tr';
