@@ -286,8 +286,8 @@ class UK_LloydsBank {
 				'date'            => strtotime($txnRow->childNodes->item(0)->nodeValue),
 				'commentary'      => $txnRow->childNodes->item(1)->nodeValue,
 				'transType'       => $txnRow->childNodes->item(2)->nodeValue,
-				'amount'          => floatval($txnRow->childNodes->item(3)->nodeValue)
-				- floatval($txnRow->childNodes->item(4)->nodeValue),
+				'amount'          => floatval(str_replace(',', '', $txnRow->childNodes->item(3)->nodeValue))
+				- floatval(str_replace(',', '', $txnRow->childNodes->item(4)->nodeValue)),
 				'balance'         => $txnRow->childNodes->item(5)->nodeValue
 			);
 
