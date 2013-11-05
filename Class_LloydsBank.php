@@ -196,9 +196,15 @@ class UK_LloydsBank {
 		$x_query =
 			'//div[contains(@class,"accountDetails")'
 			.' and contains(.,"'.$this->loginData['accNumber'].'")]//a';
-		$account_url = $this->easyxpath($html, self::EZX_OTHER, $x_query)
-			->item(0)
-			->getAttribute('href');
+		$xp = $this->easyxpath($html, self::EZX_OTHER, $x_query);
+                if ( !$xp ) {
+                    return FALSE;
+                }
+                $item = $xp->item(0);
+                if ( !$item ) {
+                    return FALSE;
+                }
+                $account_url = $item->getAttribute('href');
 
 		return $this->easycurl($this::$URL_PREFIX.$account_url);
 	}
