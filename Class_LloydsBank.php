@@ -317,7 +317,7 @@ class UK_LloydsBank {
 		$date_regex = '/\d{2}('.implode('|', array_map('preg_quote', $months)).')\d{2}/i';
 		preg_match($date_regex, $cNode->nodeValue, $matches);
 		if ( $matches ) {
-			$c['date'] = strtotime(substr($matches[0], 0, 2) . ' ' . substr($matches[0], 2, 3) . ' ' . substr($matches[0], -2));
+			$c['sentDate'] = strtotime(substr($matches[0], 0, 2) . ' ' . substr($matches[0], 2, 3) . ' ' . substr($matches[0], -2));
 		}
 		$time_regex = '/\d{2}:\d{2}/i';
 		preg_match($time_regex, $cNode->nodeValue, $matches);
