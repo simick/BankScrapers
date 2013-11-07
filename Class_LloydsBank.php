@@ -288,7 +288,7 @@ class UK_LloydsBank {
 				'transType'       => $txnRow->childNodes->item(2)->nodeValue,
 				'amount'          => floatval(str_replace(',', '', $txnRow->childNodes->item(3)->nodeValue))
 				- floatval(str_replace(',', '', $txnRow->childNodes->item(4)->nodeValue)),
-				'balance'         => $txnRow->childNodes->item(5)->nodeValue
+				'balance'         => str_replace(',', '', $txnRow->childNodes->item(5)->nodeValue)
 			);
 
 			$commentary = $this->parseCommentary($txnRow->childNodes->item(1));
