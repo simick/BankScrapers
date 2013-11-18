@@ -14,10 +14,13 @@ if ( !isset($argv[1]) ) {
 	die();
 }
 
+##################################
+# Complete these fields before use
 $customerID = '';
 $customerPass = '';
 $memWord = '';
 $accountNum = '';
+##################################
 
 $lloyds = new UK_LloydsBank($customerID,$customerPass,$memWord,$accountNum);
 
