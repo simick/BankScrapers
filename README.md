@@ -5,10 +5,10 @@ PHP scrapers for Lloyds TSB and Natwest accounts
 
 Before use, populate the variables
 
-$customerID    Customer identification number;
-$customerPass  Password;
-$memWord       Memorable word;
-$accountNum    Account number of the account you want to scrape.
++ $customerID    Customer identification number;
++ $customerPass  Password;
++ $memWord       Memorable word;
++ $accountNum    Account number of the account you want to scrape.
 
 Usage: php LloydsInterface.php action [arguments]
 
