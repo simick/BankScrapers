@@ -28,17 +28,17 @@ switch ( strtolower($argv[1]) ) {
 case 'txn':
 	$lloyds->login();
 	if ( isset($argv[2]) ) {
-		print_r($lloyds->getTransactions($argv[2]));
+		echo json_encode($lloyds->getTransactions($argv[2]), JSON_PRETTY_PRINT);
 	} else {
-		print_r($lloyds->getTransactions());
+		echo json_encode($lloyds->getTransactions(), JSON_PRETTY_PRINT);
 	}
 	break;
 case 'bal':
 	$lloyds->login();
 	if ( isset($argv[2]) ) {
-		print_r($lloyds->getBalance($argv[2]));
+		echo json_encode($lloyds->getBalance($argv[2]), JSON_PRETTY_PRINT);
 	} else {
-		print_r($lloyds->getBalance());
+		echo json_encode($lloyds->getBalance(), JSON_PRETTY_PRINT);
 	}
 	break;
 default:

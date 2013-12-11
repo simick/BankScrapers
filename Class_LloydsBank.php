@@ -41,8 +41,6 @@ class UK_LloydsBank {
 		CURLOPT_MAXREDIRS      => 10,
 		CURLOPT_SSL_VERIFYHOST => 0,
 		CURLOPT_SSL_VERIFYPEER => 0,
-		CURLOPT_COOKIEFILE     => 'lloyds_cookies.txt',
-		CURLOPT_COOKIEJAR      => 'lloyds_cookies.txt',
 		CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'
 	);
 
@@ -51,6 +49,8 @@ class UK_LloydsBank {
 
 	public function __construct($customerID, $customerPass, $memWord, $accNumber) {
 
+		$this::$CURL_OPTS[CURLOPT_COOKIEFILE] = __DIR__ . '/lloyds_cookies.txt';
+		$this::$CURL_OPTS[CURLOPT_COOKIEJAR] = __DIR__ . '/lloyds_cookies.txt';
 		$this->loginData = array(
 			'customerID'   => $customerID,
 			'customerPass' => $customerPass,
@@ -197,14 +197,14 @@ class UK_LloydsBank {
 			'//div[contains(@class,"accountDetails")'
 			.' and contains(.,"'.$this->loginData['accNumber'].'")]//a';
 		$xp = $this->easyxpath($html, self::EZX_OTHER, $x_query);
-                if ( !$xp ) {
-                    return FALSE;
-                }
-                $item = $xp->item(0);
-                if ( !$item ) {
-                    return FALSE;
-                }
-                $account_url = $item->getAttribute('href');
+		if ( !$xp ) {
+			return FALSE;
+		}
+		$item = $xp->item(0);
+		if ( !$item ) {
+			return FALSE;
+		}
+		$account_url = $item->getAttribute('href');
 
 		return $this->easycurl($this::$URL_PREFIX.$account_url);
 	}
