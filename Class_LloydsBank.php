@@ -225,27 +225,35 @@ class UK_LloydsBank {
 		$html = $this->selectAccount();
 
 		$x_query_balance = '//div[@class="accountBalance"]//p[@class="balance"]';
-		$balances['b'] =
-			$this->easyxpath($html, self::EZX_OTHER, $x_query_balance)
+		$b = $this->easyxpath($html, self::EZX_OTHER, $x_query_balance)
 			->item(0)
 			->nodeValue;
+		$balances['balance'] = str_replace(utf8_decode("£"), "", utf8_decode($b));
 
 		$x_query_available = '//div[@class="accountBalance"]//p[contains(.,"available")]';
-		$available =
-			$this->easyxpath($html, self::EZX_OTHER, $x_query_available)
+		$a = $this->easyxpath($html, self::EZX_OTHER, $x_query_available)
 			->item(0)
 			->nodeValue;
-		$balances['a'] = array_pop(explode(" ", $available));
+		$balances['available'] = str_replace(utf8_decode("£"), "", utf8_decode(array_pop(explode(" ", $a))));
 
 		$x_query_overdraft = '//div[@class="accountBalance"]//p[contains(.,"Overdraft")]';
-		$overdraft =
-			$this->easyxpath($html, self::EZX_OTHER, $x_query_overdraft)
+		$o = $this->easyxpath($html, self::EZX_OTHER, $x_query_overdraft)
 			->item(0)
 			->nodeValue;
-		$balances['o'] = array_pop(explode(" ", $overdraft));
+		$balances['overdraft'] = str_replace(utf8_decode("£"), "", utf8_decode(array_pop(explode(" ", $o))));
 
 		if ( !is_null($which) ) {
-			return $balances[$which];
+			switch ( $which ) {
+			case "a":
+				return $balances['available'];
+				break;
+			case "b":
+				return $balances['balance'];
+				break;
+			case "o":
+				return $balances['overdraft'];
+				break;
+			}
 		} else {
 			return $balances;
 		}
@@ -307,7 +315,7 @@ class UK_LloydsBank {
 		// The other party seems to always be the first entry, handily in its own span.
 		// However, it sometimes has the date directly afterwards, separated by multiple
 		// spaces.
-		$nvExploded = explode("  ",$cNode->childNodes->item(0)->nodeValue);
+		$nvExploded = preg_split('/\s\s+/',$cNode->childNodes->item(0)->nodeValue);
 		$c['transOtherParty'] = $nvExploded[0];
 
 		// Everything from now is pick and mix, depending on transaction type...
