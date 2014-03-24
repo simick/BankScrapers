@@ -231,15 +231,14 @@ class UK_LloydsBank {
 		$balances['balance'] = str_replace(utf8_decode("£"), "", utf8_decode($b));
 
 		$x_query_available = '//div[@class="accountBalance"]';
-		$a = $this->easyxpath($html, self::EZX_OTHER, $x_query_available)
-			->item(0)
-			->nodeValue;
+		$subject = $this->easyxpath($html, self::EZX_OTHER, $x_query_available)
+						->item(0)
+						->nodeValue;
 
-		$find = utf8_encode("£");
-		$replace = "";
-		$subject = explode("\n", $a);
+		$subject = explode("\n", $subject);
 		$subject = array_pop($subject);
 		$subject = explode("[?]", $subject);
+
 		$balances['available'] = $subject[0];
 		$balances['available'] = explode(":", $balances['available']);
 		$balances['available'] = array_pop($balances['available']);
