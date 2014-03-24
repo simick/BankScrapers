@@ -55,7 +55,7 @@ class UK_LloydsBank {
 			'customerID'   => $customerID,
 			'customerPass' => $customerPass,
 			'memWord'      => $memWord,
-			'accNumber'  => $accNumber
+			'accNumber'    => $accNumber
 		);
 
 		if(!file_exists($this::$CURL_OPTS[CURLOPT_COOKIEFILE])) {
@@ -230,17 +230,25 @@ class UK_LloydsBank {
 			->nodeValue;
 		$balances['balance'] = str_replace(utf8_decode("£"), "", utf8_decode($b));
 
-		$x_query_available = '//div[@class="accountBalance"]//p[contains(.,"available")]';
+		$x_query_available = '//div[@class="accountBalance"]';
 		$a = $this->easyxpath($html, self::EZX_OTHER, $x_query_available)
 			->item(0)
 			->nodeValue;
-		$balances['available'] = str_replace(utf8_decode("£"), "", utf8_decode(array_pop(explode(" ", $a))));
 
-		$x_query_overdraft = '//div[@class="accountBalance"]//p[contains(.,"Overdraft")]';
-		$o = $this->easyxpath($html, self::EZX_OTHER, $x_query_overdraft)
-			->item(0)
-			->nodeValue;
-		$balances['overdraft'] = str_replace(utf8_decode("£"), "", utf8_decode(array_pop(explode(" ", $o))));
+		$find = utf8_encode("£");
+		$replace = "";
+		$subject = explode("\n", $a);
+		$subject = array_pop($subject);
+		$subject = explode("[?]", $subject);
+		$balances['available'] = $subject[0];
+		$balances['available'] = explode(":", $balances['available']);
+		$balances['available'] = array_pop($balances['available']);
+		$balances['available'] = preg_replace('/[^0-9\.]+/', '', $balances['available']);
+
+		$balances['overdraft'] = $subject[1];
+		$balances['overdraft'] = explode(":", $balances['overdraft']);
+		$balances['overdraft'] = array_pop($balances['overdraft']);
+		$balances['overdraft'] = preg_replace('/[^0-9\.]+/', '', $balances['overdraft']);
 
 		if ( !is_null($which) ) {
 			switch ( $which ) {
