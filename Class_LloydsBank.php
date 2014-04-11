@@ -16,7 +16,7 @@ class UK_LloydsBank {
 	private $curl;
 	private $availableBalance;
 
-	private static $URL_PREFIX = 'https://secure2.lloydstsb.co.uk';
+	private static $URL_PREFIX = 'https://secure.lloydsbank.co.uk';
 	private static $URLS = array(
 		'loginInit' =>
 		'https://online.lloydsbank.co.uk/personal/logon/login.jsp',
