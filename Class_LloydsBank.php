@@ -16,7 +16,7 @@ class UK_LloydsBank {
 	private $curl;
 	private $availableBalance;
 
-	private static $URL_PREFIX = 'https://secure2.lloydstsb.co.uk';
+	private static $URL_PREFIX = 'https://secure.lloydsbank.co.uk';
 	private static $URLS = array(
 		'loginInit' =>
 		'https://online.lloydsbank.co.uk/personal/logon/login.jsp',
@@ -41,7 +41,8 @@ class UK_LloydsBank {
 		CURLOPT_MAXREDIRS      => 10,
 		CURLOPT_SSL_VERIFYHOST => 0,
 		CURLOPT_SSL_VERIFYPEER => 0,
-		CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0'
+		// CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:23.0) Gecko/20131011 Firefox/23.0',
+		CURLOPT_USERAGENT      => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.137 Safari/537.36',
 	);
 
 	const
@@ -368,5 +369,3 @@ class UK_LloydsBank {
 		$this->setLoggedOut();
 	}
 }
-
-?>
